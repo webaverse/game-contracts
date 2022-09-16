@@ -4,6 +4,7 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./WebaverseVoucher.sol";
 
 contract WebaverseERC1155 is
@@ -15,7 +16,6 @@ contract WebaverseERC1155 is
 
     string private _name;
     string private _symbol;
-    mapping(uint256 => string) private _tokenURIs;
     mapping(uint256 => uint256) private _tokenBalances;
     mapping(address => bool) private _allowedMinters; // Mapping of white listed minters
     string private _webaBaseURI; // Base URI of the collection for Webaverse
@@ -90,85 +90,18 @@ contract WebaverseERC1155 is
 
     /**
      * @return Returns the token URI against a particular token id.
-     * e.g. [baseURI]/[cid]?attributes=[{"trait_type": "power", "display_type": "boost_number", "value": "100"}]
+     * e.g. [baseURI]/[_id]
      */
     function uri(uint256 _id) public view override returns (string memory) {
         string memory _baseURI = baseURI();
-        string memory _cid = _tokenURIs[_id];
-        string memory attributes;
+        string memory _cid = Strings.toString(_id);
         string memory _uri;
-        if (tokenIdToAttributes[_id].length > 0) {
-            attributes = "[";
-            for (uint256 i = 0; i < tokenIdToAttributes[_id].length; i++) {
-                attributes = string(
-                    abi.encodePacked(
-                        attributes,
-                        '{"trait_type":',
-                        '"',
-                        tokenIdToAttributes[_id][i].trait_type,
-                        '"',
-                        ',"value":',
-                        '"',
-                        tokenIdToAttributes[_id][i].value,
-                        '"'
-                    )
-                );
-                if (
-                    bytes(tokenIdToAttributes[_id][i].display_type).length > 0
-                ) {
-                    attributes = string(
-                        abi.encodePacked(
-                            attributes,
-                            ',"display_type":',
-                            tokenIdToAttributes[_id][i].display_type,
-                            "}"
-                        )
-                    );
-                }
-                if (i < tokenIdToAttributes[_id].length - 1) {
-                    attributes = string(abi.encodePacked(attributes, "},"));
-                } else {
-                    attributes = string(abi.encodePacked(attributes, "}]"));
-                }
-            }
-            if (bytes(_baseURI).length > 0) {
-                _uri = string(
-                    abi.encodePacked(
-                        _baseURI,
-                        "/",
-                        _cid,
-                        "?",
-                        "attributes=",
-                        attributes
-                    )
-                );
-            } else {
-                _uri = string(
-                    abi.encodePacked(_cid, "?", "attributes=", attributes)
-                );
-            }
+        if (bytes(_baseURI).length > 0) {
+            _uri = string(abi.encodePacked(_baseURI, "/", _cid));
         } else {
-            if (bytes(_baseURI).length > 0) {
-                _uri = string(abi.encodePacked(_baseURI, "/", _cid));
-            } else {
-                _uri = _cid;
-            }
+            _uri = _cid;
         }
         return _uri;
-    }
-
-    /**
-     * @dev Set attributes for the token. attributes is a key-value store that can be set by owners and collaborators
-     * @param tokenId Token id to set the uri to
-     * @param _uri The uri to set for the token
-     */
-    /// _uri === [cid] or https://[linktofile]
-    function setTokenURI(uint256 tokenId, string memory _uri)
-        public
-        onlyMinter
-    {
-        require(bytes(_uri).length > 0, "ERC1155: URI must not be empty");
-        _tokenURIs[tokenId] = _uri;
     }
 
     function getTokenIdsByOwner(address owner) public view returns (uint256[] memory, uint256) {
@@ -184,12 +117,6 @@ contract WebaverseERC1155 is
         return (ids, index);
     }
 
-    function getTokenAttr(uint256 tokenId) public view returns (string memory) {
-        string memory url = _tokenURIs[tokenId];
-        
-        return (url);
-    }
-
     /**
      * @notice Mints a single NFT with given parameters.
      * @param to The address on which the NFT will be minted.
@@ -197,12 +124,10 @@ contract WebaverseERC1155 is
     function mint(
         address to,
         uint256 balance,
-        string memory _uri,
         bytes memory data
     ) public onlyMinter {
         uint256 tokenId = getNextTokenId();
         _mint(to, tokenId, balance, data);
-        setTokenURI(tokenId, _uri);
         _incrementTokenId();
         _tokenBalances[tokenId] = balance;
         minters[tokenId] = to;
@@ -211,12 +136,10 @@ contract WebaverseERC1155 is
     /**
      * @notice Mints batch of NFTs with given parameters.
      * @param to The address to which the NFTs will be minted in batch.
-     * @param uris The URIs of all the the NFTs.
      * @param balances The balances of all the NFTs as per the ERC1155 standard.
      **/
     function mintBatch(
         address to,
-        string[] memory uris,
         uint256[] memory balances,
         bytes memory data
     ) public onlyMinter {
@@ -228,7 +151,6 @@ contract WebaverseERC1155 is
         for (uint256 i = 0; i < ids.length; i++) {
             uint256 tokenId = getNextTokenId();
             ids[i] = tokenId;
-            setTokenURI(ids[i], uris[i]);
             minters[tokenId] = to;
         }
         _mintBatch(to, ids, balances, data);
@@ -253,8 +175,6 @@ contract WebaverseERC1155 is
         uint256 tokenId = getNextTokenId();
         _mint(claimer, tokenId, voucher.balance, data);
 
-        // setURI with metadataurl of verified voucher
-        setTokenURI(tokenId, voucher.metadataurl);
         _incrementTokenId();
         _tokenBalances[tokenId] = voucher.balance;
         minters[tokenId] = claimer;

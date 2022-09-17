@@ -13,6 +13,7 @@ contract WebaverseERC1155 is
     OwnableUpgradeable
 {
     using ECDSA for bytes32;
+    using Strings for uint256;
 
     string private _name;
     string private _symbol;

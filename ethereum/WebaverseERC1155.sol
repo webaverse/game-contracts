@@ -13,12 +13,12 @@ contract WebaverseERC1155 is
     OwnableUpgradeable
 {
     using ECDSA for bytes32;
+    using Strings for uint256;
 
     string private _name;
     string private _symbol;
     mapping(uint256 => string) private _tokenURIs;
     mapping(uint256 => uint256) private _tokenBalances;
-    mapping(address => bool) private _allowedMinters; // Mapping of white listed minters
     string private _webaBaseURI; // Base URI of the collection for Webaverse
     uint256 public currentTokenId; // State variable for storing the latest minted token id
     bool internal isPublicallyMintable; // whether anyone can mint tokens in this copy of the contract
@@ -32,16 +32,10 @@ contract WebaverseERC1155 is
         uint256 indexed id
     );
 
-    modifier onlyMinter() {
-        require(isAllowedMinter(msg.sender), "ERC1155: unauthorized call");
-        _;
-    }
-
     function initialize(
         string memory name_,
         string memory symbol_,
-        string memory baseURI_,
-        address minter
+        string memory baseURI_
     ) public initializer {
         _name = name_;
         _symbol = symbol_;
@@ -49,7 +43,6 @@ contract WebaverseERC1155 is
         __ERC1155_init(baseURI_);
         _webaBaseURI = baseURI_;
         _webaverse_voucher_init();
-        _allowedMinters[minter] = true;
     }
 
     /**
@@ -77,7 +70,7 @@ contract WebaverseERC1155 is
      * @dev Update or change the Base URI of the collection for Webaverse NFTs
      * @param baseURI_ The base URI of the host to fetch the attributes from e.g. https://ipfs.io/ipfs/.
      */
-    function setBaseURI(string memory baseURI_) public onlyMinter {
+    function setBaseURI(string memory baseURI_) public onlyOwner {
         _webaBaseURI = baseURI_;
     }
 
@@ -90,33 +83,49 @@ contract WebaverseERC1155 is
     }
 
     /**
-     * @return Returns the token URI against a particular token id.
-     * e.g. [baseURI]/[_id]
+     * @dev Update or change the isPublicallyMintable for Webaverse NFTs
+     * @param _isPublicallyMintable True: mint can be called False: mint can't be called
      */
-    function uri(uint256 _id) public view override returns (string memory) {
-        string memory _baseURI = baseURI();
-        string memory _cid = Strings.toString(_id);
-        string memory _uri;
-        if (bytes(_baseURI).length > 0) {
-            _uri = string(abi.encodePacked(_baseURI, "/", _cid));
-        } else {
-            _uri = _cid;
-        }
-        return _uri;
+    function setPublicallyMintable(bool _isPublicallyMintable) public onlyOwner {
+        isPublicallyMintable = _isPublicallyMintable;
     }
 
     /**
-     * @dev Set token uri
-     * @param tokenId Token id to set the uri to
-     * @param _uri The uri to set for the token
+     * @return Returns isPublicallyMintable.
      */
-    /// _uri === [cid] or https://[linktofile]
-    function setTokenURI(uint256 tokenId, string memory _uri)
-        public
-        onlyMinter
+    function getPublicallyMintable() public view returns (bool) {
+        return isPublicallyMintable;
+    }
+
+    /**
+     * @return Returns the token URI against a particular token id.
+     * e.g. https://tokens.webaverse.com/1
+     */
+    function uri(uint256 _id) public view override returns (string memory) {
+        string memory baseURI = baseURI();
+        return bytes(baseURI).length != 0 ? string(abi.encodePacked(baseURI, _id.toString())) : '';
+    }
+
+    /**
+     * @dev get token contentURL
+     * @param tokenId Token id to set the contentURL to
+     * @param _uri The contentURL to set for the token
+     */
+    function setTokenContentURL(uint256 tokenId, string memory _uri)
+        internal
     {
         require(bytes(_uri).length > 0, "ERC1155: URI must not be empty");
         _tokenURIs[tokenId] = _uri;
+    }
+
+    /**
+     * @dev get token contentURL
+     * @param tokenId Token id to get the contentURL
+     */
+    function getTokenContentURL(uint256 tokenId) public view returns (string memory) 
+    {
+        require(currentTokenId >= tokenId, "ERC1155: contentURL query for nonexistent token");
+        return _tokenURIs[tokenId];
     }
 
     function getTokenIdsByOwner(address owner) public view returns (uint256[] memory, uint256) {
@@ -141,10 +150,11 @@ contract WebaverseERC1155 is
         uint256 balance,
         string memory _uri,
         bytes memory data
-    ) public onlyMinter {
+    ) public {
+        require(isPublicallyMintable, "ERC1155: Public Mint Closed");
         uint256 tokenId = getNextTokenId();
         _mint(to, tokenId, balance, data);
-        setTokenURI(tokenId, _uri);
+        setTokenContentURL(tokenId, _uri);
         _incrementTokenId();
         _tokenBalances[tokenId] = balance;
         minters[tokenId] = to;
@@ -161,7 +171,7 @@ contract WebaverseERC1155 is
         string[] memory uris,
         uint256[] memory balances,
         bytes memory data
-    ) public onlyMinter {
+    ) public {
         require(
             uris.length == balances.length,
             "WBVRSERC1155: URIs and balances length mismatch"
@@ -170,7 +180,7 @@ contract WebaverseERC1155 is
         for (uint256 i = 0; i < ids.length; i++) {
             uint256 tokenId = getNextTokenId();
             ids[i] = tokenId;
-            setTokenURI(ids[i], uris[i]);
+            setTokenContentURL(tokenId, uris[i]);
             minters[tokenId] = to;
         }
         _mintBatch(to, ids, balances, data);
@@ -187,59 +197,29 @@ contract WebaverseERC1155 is
      **/
     function mintServerDropNFT(address signer, address claimer, bytes memory data, NFTVoucher calldata voucher)
         public
-        virtual
-        onlyMinter
     {
         require(owner() == signer, "Wrong signature!");
 
         uint256 tokenId = getNextTokenId();
         _mint(claimer, tokenId, voucher.balance, data);
 
-        // setURI with contenturl of verified voucher
-        setTokenURI(tokenId, voucher.contenturl);
+        // setURI with token's contentURL of verified voucher
+        setTokenContentURL(tokenId, voucher.contentURL);
         _incrementTokenId();
         _tokenBalances[tokenId] = voucher.balance;
         minters[tokenId] = claimer;
     }
 
     /**
-     * @dev Get attributes for the token. attribute is a key-value store that can be set by owners and collaborators
-     * @param tokenId Token id to query for attribute
-     * @param trait_type Key to query for a value
-     * @return Value corresponding to attribute key
-     */
-    function getAttribute(uint256 tokenId, string memory trait_type)
-        public
-        view
-        returns (string memory)
-    {
-        for (uint256 i = 0; i < tokenIdToAttributes[tokenId].length; i++) {
-            if (streq(tokenIdToAttributes[tokenId][i].trait_type, trait_type)) {
-                return
-                    string(
-                        abi.encodePacked(
-                            tokenIdToAttributes[tokenId][i].value,
-                            tokenIdToAttributes[tokenId][i].display_type
-                        )
-                    );
-            }
-        }
-        return "";
-    }
-
-    /**
      * @notice Redeems an NFTVoucher for an actual NFT, authorized by the owner.
      * @param signer The address of the account which signed the NFT Voucher.
      * @param claimer The address of the account which will receive the NFT upon success.
-     * @param data The data to store.
      * @param voucher A signed NFTVoucher that describes the NFT to be redeemed.
      * @dev Verification through ECDSA signature of 'typed' data.
      * @dev Voucher must contain valid signature, nonce, and expiry.
      **/
-    function claim(address signer, address claimer, bytes memory data, NFTVoucher calldata voucher)
+    function claim(address signer, address claimer, NFTVoucher calldata voucher)
         public
-        virtual
-        onlyMinter
     {
         // make sure signature is valid and get the address of the signer
         // address signer = verifyVoucher(voucher);
@@ -320,33 +300,6 @@ contract WebaverseERC1155 is
     }
 
     /**
-     * @dev Checks if an address is allowed to mint ERC20 tokens
-     * @param account address to check for the white listing for
-     * @return true if address is allowed to mint
-     */
-    function isAllowedMinter(address account) public view returns (bool) {
-        return _allowedMinters[account];
-    }
-
-    /**
-     * @dev Add an account to the list of accounts allowed to create ERC20 tokens
-     * @param minter address to whitelist
-     */
-    function addMinter(address minter) public onlyOwner {
-        require(!isAllowedMinter(minter), "ERC20: Minter already added");
-        _allowedMinters[minter] = true;
-    }
-
-    /**
-     * @dev Remove an account from the list of accounts allowed to create ERC20 tokens
-     * @param minter address to remove from whitelist
-     */
-    function removeMinter(address minter) public onlyOwner {
-        require(isAllowedMinter(minter), "ERC20: Minter does not exist");
-        _allowedMinters[minter] = false;
-    }
-
-    /**
      * @dev returns the next token id to be minted
      */
     function getNextTokenId() public view returns (uint256) {
@@ -358,48 +311,6 @@ contract WebaverseERC1155 is
      */
     function _incrementTokenId() internal {
         currentTokenId++;
-    }
-
-    /**@dev Helper function to convert a uint to a string
-     * @param _i uint to convert
-     * @return _uintAsString string converted from uint
-     */
-    function uint2str(uint256 _i)
-        internal
-        pure
-        returns (string memory _uintAsString)
-    {
-        if (_i == 0) {
-            return "0";
-        }
-        uint256 j = _i;
-        uint256 len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint256 k = len - 1;
-        while (_i != 0) {
-            bstr[k--] = bytes1(uint8(48 + (_i % 10)));
-            _i /= 10;
-        }
-        return string(bstr);
-    }
-
-    /**
-     * @dev Check if two strings are equal
-     * @param a First string to compare
-     * @param b Second string to compare
-     * @return Returns true if strings are equal
-     */
-    function streq(string memory a, string memory b)
-        internal
-        pure
-        returns (bool)
-    {
-        return (keccak256(abi.encodePacked((a))) ==
-            keccak256(abi.encodePacked((b))));
     }
 
     /**

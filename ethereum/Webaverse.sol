@@ -104,7 +104,6 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
         address to,
         uint256 balance,
         string memory uri,
-        string memory name,
         bytes memory data
     ) public {
         if (mintFee() != 0) {
@@ -117,18 +116,16 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
                 "Webaverse: Mint transfer failed"
             );
         }
-        _nftContract.mint(to, balance, uri, name, data);
+        _nftContract.mint(to, balance, uri, data);
     }
 
     /**
      * @notice Claims(Mints) the a single NFT with given parameters.
      * @param to The address on which the NFT will be minted(claimed).
-     * @param data The data to store when claim.
      * @param voucher A signed NFTVoucher that describes the NFT to be redeemed.
      **/
     function claim_NFT(
         address to,
-        bytes memory data,
         NFTVoucher calldata voucher
     ) public {
         address signer = verifyVoucher(voucher);
@@ -143,7 +140,7 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
                 "Webaverse: Mint transfer failed"
             );
         }
-        _nftContract.claim(signer, to, data, voucher);
+        _nftContract.claim(signer, to, voucher);
     }
 
     /**
@@ -202,26 +199,5 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
         address signer = verifyVoucher(voucher);
 
         _silkContract.mintServerDropFT(signer, to, voucher);
-    }
-
-    /**
-     * @notice Mints the a single NFT with given parameters.
-     * @param tokenId The id of the token.
-     * @param trait_type Name of the attribute (as per opensea metadata standard).
-     * @param value String value of the atrribute being added or set (as per opensea metadata standard).
-     * @param display_type Display type of the attribute (as per opensea metadata standard).
-     **/
-    function setAttribute(
-        uint256 tokenId,
-        string memory trait_type,
-        string memory value,
-        string memory display_type
-    ) public {
-        require(
-            _nftContract.balanceOf(msg.sender, tokenId) ==
-                _nftContract.getTokenBalance(tokenId),
-            "Webaverse: Only owner can set attributes"
-        );
-        _nftContract.setAttribute(tokenId, trait_type, value, display_type);
     }
 }

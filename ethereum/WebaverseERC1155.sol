@@ -99,16 +99,26 @@ contract WebaverseERC1155 is
     }
 
     /**
-     * @dev Set token uri
-     * @param tokenId Token id to set the uri to
-     * @param _uri The uri to set for the token
+     * @dev get token contentURL
+     * @param tokenId Token id to set the ContentURL to
+     * @param _uri The contentURL to set for the token
      */
-    function setTokenURI(uint256 tokenId, string memory _uri)
+    function setTokenContentURL(uint256 tokenId, string memory _uri)
         public
         onlyMinter
     {
         require(bytes(_uri).length > 0, "ERC1155: URI must not be empty");
         _tokenURIs[tokenId] = _uri;
+    }
+
+    /**
+     * @dev get token ContentURL
+     * @param tokenId Token id to get the ContentURL
+     */
+    function getTokenContentURL(uint256 tokenId) public view returns (string memory) 
+    {
+        require(currentTokenId >= tokenId, "ERC1155: ContentURI query for nonexistent token");
+        return _tokenURIs[tokenId];
     }
 
     function getTokenIdsByOwner(address owner) public view returns (uint256[] memory, uint256) {
@@ -136,7 +146,7 @@ contract WebaverseERC1155 is
     ) public onlyMinter {
         uint256 tokenId = getNextTokenId();
         _mint(to, tokenId, balance, data);
-        setTokenURI(tokenId, _uri);
+        setTokenContentURL(tokenId, _uri);
         _incrementTokenId();
         _tokenBalances[tokenId] = balance;
         minters[tokenId] = to;
@@ -162,7 +172,7 @@ contract WebaverseERC1155 is
         for (uint256 i = 0; i < ids.length; i++) {
             uint256 tokenId = getNextTokenId();
             ids[i] = tokenId;
-            setTokenURI(tokenId, uris[i]);
+            setTokenContentURL(tokenId, uris[i]);
             minters[tokenId] = to;
         }
         _mintBatch(to, ids, balances, data);
@@ -188,7 +198,7 @@ contract WebaverseERC1155 is
         _mint(claimer, tokenId, voucher.balance, data);
 
         // setURI with token's contentURL of verified voucher
-        setTokenURI(tokenId, voucher.contentURL);
+        setTokenContentURL(tokenId, voucher.contentURL);
         _incrementTokenId();
         _tokenBalances[tokenId] = voucher.balance;
         minters[tokenId] = claimer;

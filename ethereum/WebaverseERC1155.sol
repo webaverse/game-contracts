@@ -35,7 +35,7 @@ contract WebaverseERC1155 is
     function initialize(
         string memory name_,
         string memory symbol_,
-        string memory baseURI_,
+        string memory baseURI_
     ) public initializer {
         _name = name_;
         _symbol = symbol_;

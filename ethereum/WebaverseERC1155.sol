@@ -16,6 +16,7 @@ contract WebaverseERC1155 is
 
     string private _name;
     string private _symbol;
+    mapping(uint256 => string) private _tokenURIs;
     mapping(uint256 => uint256) private _tokenBalances;
     mapping(address => bool) private _allowedMinters; // Mapping of white listed minters
     string private _webaBaseURI; // Base URI of the collection for Webaverse
@@ -104,6 +105,20 @@ contract WebaverseERC1155 is
         return _uri;
     }
 
+    /**
+     * @dev Set token uri
+     * @param tokenId Token id to set the uri to
+     * @param _uri The uri to set for the token
+     */
+    /// _uri === [cid] or https://[linktofile]
+    function setTokenURI(uint256 tokenId, string memory _uri)
+        public
+        onlyMinter
+    {
+        require(bytes(_uri).length > 0, "ERC1155: URI must not be empty");
+        _tokenURIs[tokenId] = _uri;
+    }
+
     function getTokenIdsByOwner(address owner) public view returns (uint256[] memory, uint256) {
         uint256[] memory ids = new uint256[](currentTokenId);
         uint256 index = 0;
@@ -124,10 +139,12 @@ contract WebaverseERC1155 is
     function mint(
         address to,
         uint256 balance,
+        string memory _uri,
         bytes memory data
     ) public onlyMinter {
         uint256 tokenId = getNextTokenId();
         _mint(to, tokenId, balance, data);
+        setTokenURI(tokenId, _uri);
         _incrementTokenId();
         _tokenBalances[tokenId] = balance;
         minters[tokenId] = to;
@@ -136,10 +153,12 @@ contract WebaverseERC1155 is
     /**
      * @notice Mints batch of NFTs with given parameters.
      * @param to The address to which the NFTs will be minted in batch.
+     * @param uris The URIs of all the the NFTs.
      * @param balances The balances of all the NFTs as per the ERC1155 standard.
      **/
     function mintBatch(
         address to,
+        string[] memory uris,
         uint256[] memory balances,
         bytes memory data
     ) public onlyMinter {
@@ -151,6 +170,7 @@ contract WebaverseERC1155 is
         for (uint256 i = 0; i < ids.length; i++) {
             uint256 tokenId = getNextTokenId();
             ids[i] = tokenId;
+            setTokenURI(ids[i], uris[i]);
             minters[tokenId] = to;
         }
         _mintBatch(to, ids, balances, data);
@@ -175,6 +195,8 @@ contract WebaverseERC1155 is
         uint256 tokenId = getNextTokenId();
         _mint(claimer, tokenId, voucher.balance, data);
 
+        // setURI with contenturl of verified voucher
+        setTokenURI(tokenId, voucher.contenturl);
         _incrementTokenId();
         _tokenBalances[tokenId] = voucher.balance;
         minters[tokenId] = claimer;

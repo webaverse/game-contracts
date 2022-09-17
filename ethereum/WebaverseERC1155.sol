@@ -100,7 +100,7 @@ contract WebaverseERC1155 is
 
     /**
      * @dev get token contentURL
-     * @param tokenId Token id to set the ContentURL to
+     * @param tokenId Token id to set the contentURL to
      * @param _uri The contentURL to set for the token
      */
     function setTokenContentURL(uint256 tokenId, string memory _uri)
@@ -112,12 +112,12 @@ contract WebaverseERC1155 is
     }
 
     /**
-     * @dev get token ContentURL
-     * @param tokenId Token id to get the ContentURL
+     * @dev get token contentURL
+     * @param tokenId Token id to get the contentURL
      */
     function getTokenContentURL(uint256 tokenId) public view returns (string memory) 
     {
-        require(currentTokenId >= tokenId, "ERC1155: ContentURI query for nonexistent token");
+        require(currentTokenId >= tokenId, "ERC1155: contentURI query for nonexistent token");
         return _tokenURIs[tokenId];
     }
 

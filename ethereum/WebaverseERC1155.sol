@@ -151,7 +151,7 @@ contract WebaverseERC1155 is
         string memory _uri,
         bytes memory data
     ) public {
-        require(isPublicallyMintable, "ERC1155: Public Mint Closed")
+        require(isPublicallyMintable, "ERC1155: Public Mint Closed");
         uint256 tokenId = getNextTokenId();
         _mint(to, tokenId, balance, data);
         setTokenContentURL(tokenId, _uri);

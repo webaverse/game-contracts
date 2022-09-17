@@ -94,7 +94,7 @@ contract WebaverseERC1155 is
      * e.g. https://tokens.webaverse.com/1
      */
     function uri(uint256 _id) public view override returns (string memory) {
-        string memory baseURI = _baseURI();
+        string memory baseURI = baseURI();
         return bytes(baseURI).length != 0 ? string(abi.encodePacked(baseURI, _id.toString())) : '';
     }
 

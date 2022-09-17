@@ -4,6 +4,7 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./WebaverseVoucher.sol";
 
 contract WebaverseERC1155 is
@@ -21,21 +22,8 @@ contract WebaverseERC1155 is
     string private _webaBaseURI; // Base URI of the collection for Webaverse
     uint256 public currentTokenId; // State variable for storing the latest minted token id
     bool internal isPublicallyMintable; // whether anyone can mint tokens in this copy of the contract
-    mapping(uint256 => attribute[]) internal tokenIdToAttributes; // map of token id to attributes (additional attributes) key-value store
     mapping(uint256 => address) internal minters; // map of tokens to minters
 
-    struct attribute {
-        string trait_type;
-        string value;
-        string display_type;
-    }
-
-    event AttributeSet(
-        uint256 tokenId,
-        string trait_type,
-        string value,
-        string display_type
-    );
     event Claim(address signer, address claimer, uint256 indexed id);
     event ExternalClaim(
         address indexed externalContract,
@@ -103,75 +91,22 @@ contract WebaverseERC1155 is
 
     /**
      * @return Returns the token URI against a particular token id.
-     * e.g. [baseURI]/[cid]?attributes=[{"trait_type": "power", "display_type": "boost_number", "value": "100"}]
+     * e.g. [baseURI]/[_id]
      */
     function uri(uint256 _id) public view override returns (string memory) {
         string memory _baseURI = baseURI();
-        string memory _cid = _tokenURIs[_id];
-        string memory attributes;
+        string memory _cid = Strings.toString(_id);
         string memory _uri;
-        if (tokenIdToAttributes[_id].length > 0) {
-            attributes = "[";
-            for (uint256 i = 0; i < tokenIdToAttributes[_id].length; i++) {
-                attributes = string(
-                    abi.encodePacked(
-                        attributes,
-                        '{"trait_type":',
-                        '"',
-                        tokenIdToAttributes[_id][i].trait_type,
-                        '"',
-                        ',"value":',
-                        '"',
-                        tokenIdToAttributes[_id][i].value,
-                        '"'
-                    )
-                );
-                if (
-                    bytes(tokenIdToAttributes[_id][i].display_type).length > 0
-                ) {
-                    attributes = string(
-                        abi.encodePacked(
-                            attributes,
-                            ',"display_type":',
-                            tokenIdToAttributes[_id][i].display_type,
-                            "}"
-                        )
-                    );
-                }
-                if (i < tokenIdToAttributes[_id].length - 1) {
-                    attributes = string(abi.encodePacked(attributes, "},"));
-                } else {
-                    attributes = string(abi.encodePacked(attributes, "}]"));
-                }
-            }
-            if (bytes(_baseURI).length > 0) {
-                _uri = string(
-                    abi.encodePacked(
-                        _baseURI,
-                        "/",
-                        _cid,
-                        "?",
-                        "attributes=",
-                        attributes
-                    )
-                );
-            } else {
-                _uri = string(
-                    abi.encodePacked(_cid, "?", "attributes=", attributes)
-                );
-            }
+        if (bytes(_baseURI).length > 0) {
+            _uri = string(abi.encodePacked(_baseURI, "/", _cid));
         } else {
-            if (bytes(_baseURI).length > 0) {
-                _uri = string(abi.encodePacked(_baseURI, "/", _cid));
-            } else {
-                _uri = _cid;
-            }
+            _uri = _cid;
         }
         return _uri;
     }
 
     /**
-     * @dev Set attributes for the token. attributes is a key-value store that can be set by owners and collaborators
+     * @dev Set token uri
      * @param tokenId Token id to set the uri to
      * @param _uri The uri to set for the token
      */
@@ -197,14 +132,6 @@ contract WebaverseERC1155 is
         return (ids, index);
     }
 
-    function getTokenAttr(uint256 tokenId) public view returns (string memory, string memory, string memory) {
-        string memory url = _tokenURIs[tokenId];
-        string memory tokenName = getAttribute(tokenId, "name");
-        string memory tokenLevel = getAttribute(tokenId, "level");
-        
-        return (url, tokenName, tokenLevel);
-    }
-
     /**
      * @notice Mints a single NFT with given parameters.
      * @param to The address on which the NFT will be minted.
@@ -213,14 +140,11 @@ contract WebaverseERC1155 is
         address to,
         uint256 balance,
         string memory _uri,
-        string memory _name,
         bytes memory data
     ) public onlyMinter {
         uint256 tokenId = getNextTokenId();
         _mint(to, tokenId, balance, data);
         setTokenURI(tokenId, _uri);
-        setAttribute(tokenId, "name", _name, "");
-        setAttribute(tokenId, "level", "1", "");
         _incrementTokenId();
         _tokenBalances[tokenId] = balance;
         minters[tokenId] = to;
@@ -256,14 +180,12 @@ contract WebaverseERC1155 is
      * @notice Redeems an NFTVoucher for an actual NFT, authorized by the owner.
      * @param signer The address of the account which signed the NFT Voucher.
      * @param claimer The address of the account which will receive the NFT upon success.
-     * @param dropName The name to store.
-     * @param dropLevel The level to store.
      * @param data The data to store.
      * @param voucher A signed NFTVoucher that describes the NFT to be redeemed.
      * @dev Verification through ECDSA signature of 'typed' data.
      * @dev Voucher must contain valid signature, nonce, and expiry.
      **/
-    function mintServerDropNFT(address signer, address claimer, string memory dropName, string memory dropLevel, bytes memory data, NFTVoucher calldata voucher)
+    function mintServerDropNFT(address signer, address claimer, bytes memory data, NFTVoucher calldata voucher)
         public
         virtual
         onlyMinter
@@ -273,10 +195,8 @@ contract WebaverseERC1155 is
         uint256 tokenId = getNextTokenId();
         _mint(claimer, tokenId, voucher.balance, data);
 
-        // setURI with metadataurl of verified voucher
-        setTokenURI(tokenId, voucher.metadataurl);
-        setAttribute(tokenId, "name", dropName, "");
-        setAttribute(tokenId, "level", dropLevel, "");
+        // setURI with contenturl of verified voucher
+        setTokenURI(tokenId, voucher.contenturl);
         _incrementTokenId();
         _tokenBalances[tokenId] = voucher.balance;
         minters[tokenId] = claimer;
@@ -305,43 +225,6 @@ contract WebaverseERC1155 is
             }
         }
         return "";
-    }
-
-    /**
-     * @dev Set attributes for the token. attributes is a key-value store that can be set by owners and collaborators
-     * @param trait_type Key to store value at
-     * @param value Value to store
-     */
-    function setAttribute(
-        uint256 tokenId,
-        string memory trait_type,
-        string memory value,
-        string memory display_type
-    ) public onlyMinter {
-        require(tokenId > 0, "ERC1155: invalid token id");
-        require(
-            bytes(trait_type).length > 0,
-            "ERC1155: Attribute name must not be empty"
-        );
-        require(
-            bytes(value).length > 0,
-            "ERC1155: Attribute value must not be empty"
-        );
-        bool keyFound = false;
-        for (uint256 i = 0; i < tokenIdToAttributes[tokenId].length; i++) {
-            if (streq(tokenIdToAttributes[tokenId][i].trait_type, trait_type)) {
-                tokenIdToAttributes[tokenId][i].value = value;
-                tokenIdToAttributes[tokenId][i].display_type = display_type;
-                keyFound = true;
-                break;
-            }
-        }
-        if (!keyFound) {
-            tokenIdToAttributes[tokenId].push(
-                attribute(trait_type, value, display_type)
-            );
-        }
-        emit AttributeSet(tokenId, trait_type, value, display_type);
     }
 
     /**

@@ -165,14 +165,10 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
      * @notice Claims(Mints) the a single Server Drop NFT with given parameters.
      * @param to The address on which the NFT will be minted(claimed).
      * @param data The data to store when claim.
-     * @param name The name to store when claim.
-     * @param level The level to store when claim.
      * @param voucher A signed NFTVoucher that describes the NFT to be redeemed.
      **/
     function claimServerDropNFT(
         address to,
-        string memory name,
-        string memory level,
         bytes memory data,
         NFTVoucher calldata voucher
     ) public {
@@ -190,7 +186,7 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
         // make sure signature is valid and get the address of the signer
         address signer = verifyVoucher(voucher);
 
-        _nftContract.mintServerDropNFT(signer, to, name, level, data, voucher);
+        _nftContract.mintServerDropNFT(signer, to, data, voucher);
     }
 
     /**

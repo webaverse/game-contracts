@@ -122,12 +122,10 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
     /**
      * @notice Claims(Mints) the a single NFT with given parameters.
      * @param to The address on which the NFT will be minted(claimed).
-     * @param data The data to store when claim.
      * @param voucher A signed NFTVoucher that describes the NFT to be redeemed.
      **/
     function claim_NFT(
         address to,
-        bytes memory data,
         NFTVoucher calldata voucher
     ) public {
         address signer = verifyVoucher(voucher);
@@ -142,7 +140,7 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
                 "Webaverse: Mint transfer failed"
             );
         }
-        _nftContract.claim(signer, to, data, voucher);
+        _nftContract.claim(signer, to, voucher);
     }
 
     /**

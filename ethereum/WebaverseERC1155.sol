@@ -205,12 +205,11 @@ contract WebaverseERC1155 is
      * @notice Redeems an NFTVoucher for an actual NFT, authorized by the owner.
      * @param signer The address of the account which signed the NFT Voucher.
      * @param claimer The address of the account which will receive the NFT upon success.
-     * @param data The data to store.
      * @param voucher A signed NFTVoucher that describes the NFT to be redeemed.
      * @dev Verification through ECDSA signature of 'typed' data.
      * @dev Voucher must contain valid signature, nonce, and expiry.
      **/
-    function claim(address signer, address claimer, bytes memory data, NFTVoucher calldata voucher)
+    function claim(address signer, address claimer, NFTVoucher calldata voucher)
         public
         virtual
         onlyMinter

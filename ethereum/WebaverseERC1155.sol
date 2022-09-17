@@ -4,6 +4,7 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./WebaverseVoucher.sol";
 
 contract WebaverseERC1155 is
@@ -95,12 +96,17 @@ contract WebaverseERC1155 is
     function uri(uint256 _id) public view override returns (string memory) {
         string memory _baseURI = baseURI();
         string memory _contentURL = _tokenURIs[_id];
-
-        return string(abi.encodePacked(_baseURI, "/", _contentURL));
+        string memory _uri;
+        if (bytes(_baseURI).length > 0) {
+            _uri = string(abi.encodePacked(_baseURI, "/", _contentURL));
+        } else {
+            _uri = _contentURL;
+        }
+        return _uri;
     }
 
     /**
-     * @dev Set attributes for the token. attributes is a key-value store that can be set by owners and collaborators
+     * @dev Set token uri
      * @param tokenId Token id to set the uri to
      * @param _uri The uri to set for the token
      */

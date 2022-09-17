@@ -117,7 +117,7 @@ contract WebaverseERC1155 is
      */
     function getTokenContentURL(uint256 tokenId) public view returns (string memory) 
     {
-        require(currentTokenId >= tokenId, "ERC1155: contentURI query for nonexistent token");
+        require(currentTokenId >= tokenId, "ERC1155: contentURL query for nonexistent token");
         return _tokenURIs[tokenId];
     }
 

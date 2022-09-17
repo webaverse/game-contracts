@@ -91,18 +91,11 @@ contract WebaverseERC1155 is
 
     /**
      * @return Returns the token URI against a particular token id.
-     * e.g. It's just the token's content URL, which will most likely be a metaversefile directory. But it could also be a GH pages or similar.
+     * e.g. https://tokens.webaverse.com/1
      */
     function uri(uint256 _id) public view override returns (string memory) {
-        string memory _baseURI = baseURI();
-        string memory _contentURL = _tokenURIs[_id];
-        string memory _uri;
-        if (bytes(_baseURI).length > 0) {
-            _uri = string(abi.encodePacked(_baseURI, "/", _contentURL));
-        } else {
-            _uri = _contentURL;
-        }
-        return _uri;
+        string memory baseURI = _baseURI();
+        return bytes(baseURI).length != 0 ? string(abi.encodePacked(baseURI, _id.toString())) : '';
     }
 
     /**

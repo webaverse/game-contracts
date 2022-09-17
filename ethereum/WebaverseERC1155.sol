@@ -19,7 +19,6 @@ contract WebaverseERC1155 is
     string private _symbol;
     mapping(uint256 => string) private _tokenURIs;
     mapping(uint256 => uint256) private _tokenBalances;
-    mapping(address => bool) private _allowedMinters; // Mapping of white listed minters
     string private _webaBaseURI; // Base URI of the collection for Webaverse
     uint256 public currentTokenId; // State variable for storing the latest minted token id
     bool internal isPublicallyMintable; // whether anyone can mint tokens in this copy of the contract
@@ -33,16 +32,10 @@ contract WebaverseERC1155 is
         uint256 indexed id
     );
 
-    modifier onlyMinter() {
-        require(isAllowedMinter(msg.sender), "ERC1155: unauthorized call");
-        _;
-    }
-
     function initialize(
         string memory name_,
         string memory symbol_,
         string memory baseURI_,
-        address minter
     ) public initializer {
         _name = name_;
         _symbol = symbol_;
@@ -50,7 +43,6 @@ contract WebaverseERC1155 is
         __ERC1155_init(baseURI_);
         _webaBaseURI = baseURI_;
         _webaverse_voucher_init();
-        _allowedMinters[minter] = true;
     }
 
     /**
@@ -78,7 +70,7 @@ contract WebaverseERC1155 is
      * @dev Update or change the Base URI of the collection for Webaverse NFTs
      * @param baseURI_ The base URI of the host to fetch the attributes from e.g. https://ipfs.io/ipfs/.
      */
-    function setBaseURI(string memory baseURI_) public onlyMinter {
+    function setBaseURI(string memory baseURI_) public onlyOwner {
         _webaBaseURI = baseURI_;
     }
 
@@ -88,6 +80,21 @@ contract WebaverseERC1155 is
      */
     function getTokenBalance(uint256 tokenId) public view returns (uint256) {
         return _tokenBalances[tokenId];
+    }
+
+    /**
+     * @dev Update or change the isPublicallyMintable for Webaverse NFTs
+     * @param _isPublicallyMintable True: mint can be called False: mint can't be called
+     */
+    function setPublicallyMintable(bool _isPublicallyMintable) public onlyOwner {
+        isPublicallyMintable = _isPublicallyMintable;
+    }
+
+    /**
+     * @return Returns isPublicallyMintable.
+     */
+    function getPublicallyMintable() public view returns (bool) {
+        return isPublicallyMintable;
     }
 
     /**
@@ -105,8 +112,7 @@ contract WebaverseERC1155 is
      * @param _uri The contentURL to set for the token
      */
     function setTokenContentURL(uint256 tokenId, string memory _uri)
-        public
-        onlyMinter
+        internal
     {
         require(bytes(_uri).length > 0, "ERC1155: URI must not be empty");
         _tokenURIs[tokenId] = _uri;
@@ -144,7 +150,8 @@ contract WebaverseERC1155 is
         uint256 balance,
         string memory _uri,
         bytes memory data
-    ) public onlyMinter {
+    ) public {
+        require(isPublicallyMintable, "ERC1155: Public Mint Closed")
         uint256 tokenId = getNextTokenId();
         _mint(to, tokenId, balance, data);
         setTokenContentURL(tokenId, _uri);
@@ -164,7 +171,7 @@ contract WebaverseERC1155 is
         string[] memory uris,
         uint256[] memory balances,
         bytes memory data
-    ) public onlyMinter {
+    ) public {
         require(
             uris.length == balances.length,
             "WBVRSERC1155: URIs and balances length mismatch"
@@ -190,8 +197,6 @@ contract WebaverseERC1155 is
      **/
     function mintServerDropNFT(address signer, address claimer, bytes memory data, NFTVoucher calldata voucher)
         public
-        virtual
-        onlyMinter
     {
         require(owner() == signer, "Wrong signature!");
 
@@ -215,8 +220,6 @@ contract WebaverseERC1155 is
      **/
     function claim(address signer, address claimer, NFTVoucher calldata voucher)
         public
-        virtual
-        onlyMinter
     {
         // make sure signature is valid and get the address of the signer
         // address signer = verifyVoucher(voucher);
@@ -294,33 +297,6 @@ contract WebaverseERC1155 is
         bytes memory data
     ) public {
         safeTransferFrom(_msgSender(), to, id, amount, data);
-    }
-
-    /**
-     * @dev Checks if an address is allowed to mint ERC20 tokens
-     * @param account address to check for the white listing for
-     * @return true if address is allowed to mint
-     */
-    function isAllowedMinter(address account) public view returns (bool) {
-        return _allowedMinters[account];
-    }
-
-    /**
-     * @dev Add an account to the list of accounts allowed to create ERC20 tokens
-     * @param minter address to whitelist
-     */
-    function addMinter(address minter) public onlyOwner {
-        require(!isAllowedMinter(minter), "ERC20: Minter already added");
-        _allowedMinters[minter] = true;
-    }
-
-    /**
-     * @dev Remove an account from the list of accounts allowed to create ERC20 tokens
-     * @param minter address to remove from whitelist
-     */
-    function removeMinter(address minter) public onlyOwner {
-        require(isAllowedMinter(minter), "ERC20: Minter does not exist");
-        _allowedMinters[minter] = false;
     }
 
     /**

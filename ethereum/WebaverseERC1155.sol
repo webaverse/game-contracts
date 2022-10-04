@@ -103,7 +103,7 @@ contract WebaverseERC1155 is
      */
     function uri(uint256 _id) public view override returns (string memory) {
         string memory _baseURI = baseURI();
-        return bytes(_baseURI).length != 0 ? string(abi.encodePacked(_baseURI, _id.toString())) : '';
+        return bytes(_baseURI).length != 0 ? string(abi.encodePacked(_baseURI, _tokenURIs[_id])) : '';
     }
 
     /**
@@ -122,7 +122,7 @@ contract WebaverseERC1155 is
      * @dev get token contentURL
      * @param tokenId Token id to get the contentURL
      */
-    function getTokenContentURL(uint256 tokenId) public view returns (string memory) 
+    function getTokenContentURL(uint256 tokenId) public view returns (string memory)
     {
         require(currentTokenId >= tokenId, "ERC1155: contentURL query for nonexistent token");
         return _tokenURIs[tokenId];
@@ -132,7 +132,7 @@ contract WebaverseERC1155 is
         uint256[] memory ids = new uint256[](currentTokenId);
         uint256 index = 0;
         for (uint256 i = 1; i <= currentTokenId; i++) {
-            if(minters[i] == owner) 
+            if(minters[i] == owner)
             {
                 ids[index] = i;
                 index++;

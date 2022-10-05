@@ -6,13 +6,13 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./WebaverseVoucher.sol";
-import {LicenseVersion, CantBeEvil} from "@a16z/contracts/licenses/CantBeEvil.sol";
+import "./LicenseExtension.sol";
 
 contract WebaverseERC1155 is
     ERC1155Upgradeable,
     WebaverseVoucher,
     OwnableUpgradeable,
-    CantBeEvil(LicenseVersion.CBE_CC0)
+    LicenseExtension
 {
     using ECDSA for bytes32;
     using Strings for uint256;
@@ -45,6 +45,7 @@ contract WebaverseERC1155 is
         __ERC1155_init(baseURI_);
         _webaBaseURI = baseURI_;
         _webaverse_voucher_init();
+        __LicenseExtension_init();
     }
 
     /**

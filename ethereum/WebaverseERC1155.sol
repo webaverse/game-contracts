@@ -45,7 +45,7 @@ contract WebaverseERC1155 is
         __ERC1155_init(baseURI_);
         _webaBaseURI = baseURI_;
         _webaverse_voucher_init();
-        CantBeEvil(LicenseVersion.CBE_CC0)
+        CantBeEvil(LicenseVersion.CBE_CC0);
     }
 
     /**

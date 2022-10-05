@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/webaverse/contracts#readme",
   "dependencies": {
+    "@a16z/contracts": "^0.0.8",
     "@openzeppelin/contracts": "^4.7.0",
     "@openzeppelin/contracts-upgradeable": "^4.7.0",
     "@openzeppelin/truffle-upgrades": "^1.15.0",

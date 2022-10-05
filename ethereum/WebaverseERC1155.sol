@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -12,7 +12,7 @@ contract WebaverseERC1155 is
     ERC1155Upgradeable,
     WebaverseVoucher,
     OwnableUpgradeable,
-    CantBeEvil
+    CantBeEvil(LicenseVersion.CBE_CC0)
 {
     using ECDSA for bytes32;
     using Strings for uint256;
@@ -45,7 +45,6 @@ contract WebaverseERC1155 is
         __ERC1155_init(baseURI_);
         _webaBaseURI = baseURI_;
         _webaverse_voucher_init();
-        CantBeEvil(LicenseVersion.CBE_CC0);
     }
 
     /**

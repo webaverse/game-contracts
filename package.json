@@ -23,7 +23,7 @@
     "deploy-polygon-testnet-reset": "truffle migrate --network testnetpolygon --reset",
     "deploy-polygon": "truffle migrate --network polygon",
     "deploy-polygon-reset": "truffle migrate --network polygon --reset",
-    "deploy-verify": "truffle run verify Webaverse WebaverseERC20 WebaverseERC1155 --network testnetpolygon"
+    "deploy-verify": "truffle run verify Webaverse WebaverseERC20 WebaverseERC1155 --network polygon"
   },
   "author": "",
   "license": "ISC",

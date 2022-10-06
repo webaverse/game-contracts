@@ -4,7 +4,8 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import "./ICantBeEvil.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@a16z/contracts/licenses/ICantBeEvil.sol";
 
 enum LicenseVersion {
     CBE_CC0,
@@ -15,7 +16,7 @@ enum LicenseVersion {
     CBE_PR_HS
 }
 
-contract CantBeEvilUpgradeable is ERC165, ICantBeEvil {
+contract CantBeEvilUpgradeable is ERC165, Initializable, ICantBeEvil {
     using Strings for uint;
     string internal constant _BASE_LICENSE_URI = "ar://_D9kN1WrNWbCq55BSAGRbTB4bS3v8QAPTYmBThSbX3A/";
     LicenseVersion public licenseVersion; // return string

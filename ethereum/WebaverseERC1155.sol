@@ -332,7 +332,7 @@ contract WebaverseERC1155 is
         public
         view
         virtual
-        override(CantBeEvil, ERC1155Upgradeable)
+        override(CantBeEvilUpgradeable, ERC1155Upgradeable)
         returns (bool)
     {
         return ERC1155Upgradeable.supportsInterface(interfaceId);

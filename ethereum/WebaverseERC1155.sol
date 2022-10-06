@@ -45,7 +45,6 @@ contract WebaverseERC1155 is
         __ERC1155_init(baseURI_);
         _webaBaseURI = baseURI_;
         _webaverse_voucher_init();
-        __LicenseExtension_init();
     }
 
     /**

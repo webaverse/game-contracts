@@ -23,7 +23,7 @@
     "deploy-polygon-testnet-reset": "truffle migrate --network testnetpolygon --reset",
     "deploy-polygon": "truffle migrate --network polygon",
     "deploy-polygon-reset": "truffle migrate --network polygon --reset",
-    "deploy-verify": "truffle run verify Webaverse WebaverseERC20 WebaverseERC1155 --network testnetpolygon"
+    "deploy-verify": "truffle run verify Webaverse WebaverseERC20 WebaverseERC1155 --network polygon"
   },
   "author": "",
   "license": "ISC",
@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/webaverse/contracts#readme",
   "dependencies": {
+    "@a16z/contracts": "^0.0.8",
     "@openzeppelin/contracts": "^4.7.0",
     "@openzeppelin/contracts-upgradeable": "^4.7.0",
     "@openzeppelin/truffle-upgrades": "^1.15.0",

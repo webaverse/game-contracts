@@ -14,7 +14,7 @@ const ERC20MarketCap = "2147483648000000000000000000";
 // NFTs
 const ERC1155TokenContractName = "WebaverseERC1155";
 const ERC1155TokenContractSymbol = "ASSET";
-const tokenBaseUri = "https://ipfs.webaverse.com/";
+const tokenBaseUri = "https://ipfs.webaverse.com/ipfs/";
 // const mintFee = 10; // mintFee !=0 in webaverse sidechain 
 const mintFee = 0; // minFee = 0 in Polygon and Polygon testchain: mumbai.
 
@@ -72,10 +72,10 @@ module.exports = async function (deployer) {
   
   console.log("ERC20 address is " + ERC20Address);
 /////////////////////////// ERC1155 //////////////////////////
-  let erc1155 = await deployProxy(ERC1155, [ERC1155TokenContractName, ERC1155TokenContractSymbol, "tokenBaseUri"], { deployer });
+  let erc1155 = await deployProxy(ERC1155, [ERC1155TokenContractName, ERC1155TokenContractSymbol, tokenBaseUri], { deployer });
   const ERC1155Address = erc1155.address;
 ////////////////////////////// webaverse /////////////////////////////////
-  let webaverse = await deployProxy(Webaverse, [ERC1155Address, ERC20Address, 0, "0xB565D3A7Bcf568f231726585e0b84f9E2a3722dB"], { deployer })
+  let webaverse = await deployProxy(Webaverse, [ERC1155Address, ERC20Address, mintFee, treasurer[networkType]], { deployer })
 const WebaverseAddress = webaverse.address;
 //////////////////////////////////////////////////////////////////////////
 

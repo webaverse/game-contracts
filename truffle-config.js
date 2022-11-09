@@ -45,7 +45,7 @@ module.exports = {
       networkCheckTimeout: 10000,
     },
     polygon: {
-      provider: () => new HDWalletProvider(process.env.polygon, `https://polygon-rpc.com`),
+      provider: () => new HDWalletProvider(process.env.polygon, `https://matic-mainnet.chainstacklabs.com`),
       network_id: 137,
       confirmations: 2,
       timeoutBlocks: 500,

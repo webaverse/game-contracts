@@ -163,11 +163,13 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
      * @param to The address on which the NFT will be minted(claimed).
      * @param data The data to store when claim.
      * @param voucher A signed NFTVoucher that describes the NFT to be redeemed.
+     * @param uri URI of the NFT Metadata.
      **/
     function claimServerDropNFT(
         address to,
         bytes memory data,
-        NFTVoucher calldata voucher
+        NFTVoucher calldata voucher,
+        string memory uri
     ) public {
         if (mintFee() != 0) {
             require(
@@ -183,7 +185,7 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
         // make sure signature is valid and get the address of the signer
         address signer = verifyVoucher(voucher);
 
-        _nftContract.mintServerDropNFT(signer, to, data, voucher);
+        _nftContract.mintServerDropNFT(signer, to, data, voucher, uri);
     }
 
     /**

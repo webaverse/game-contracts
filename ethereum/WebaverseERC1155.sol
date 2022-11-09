@@ -195,10 +195,11 @@ contract WebaverseERC1155 is
      * @param claimer The address of the account which will receive the NFT upon success.
      * @param data The data to store.
      * @param voucher A signed NFTVoucher that describes the NFT to be redeemed.
+     * @param _uri URI of the NFT Metadata.
      * @dev Verification through ECDSA signature of 'typed' data.
      * @dev Voucher must contain valid signature, nonce, and expiry.
      **/
-    function mintServerDropNFT(address signer, address claimer, bytes memory data, NFTVoucher calldata voucher)
+    function mintServerDropNFT(address signer, address claimer, bytes memory data, NFTVoucher calldata voucher, string memory _uri)
         public
     {
         require(owner() == signer, "Wrong signature!");
@@ -206,8 +207,8 @@ contract WebaverseERC1155 is
         uint256 tokenId = getNextTokenId();
         _mint(claimer, tokenId, voucher.balance, data);
 
-        // setURI with token's contentURL of verified voucher
-        setTokenContentURL(tokenId, voucher.contentURL);
+        // setURI with token's metadataurl of verified voucher
+        setTokenContentURL(tokenId, _uri);
         _incrementTokenId();
         _tokenBalances[tokenId] = voucher.balance;
         minters[tokenId] = claimer;

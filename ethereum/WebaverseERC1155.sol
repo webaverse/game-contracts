@@ -6,13 +6,11 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./WebaverseVoucher.sol";
-import {LicenseVersion, CantBeEvilUpgradeable} from "./CantBeEvilUpgradeable.sol";
 
 contract WebaverseERC1155 is
     ERC1155Upgradeable,
     WebaverseVoucher,
-    OwnableUpgradeable,
-    CantBeEvilUpgradeable
+    OwnableUpgradeable
 {
     using ECDSA for bytes32;
     using Strings for uint256;
@@ -25,6 +23,9 @@ contract WebaverseERC1155 is
     uint256 public currentTokenId; // State variable for storing the latest minted token id
     bool internal isPublicallyMintable; // whether anyone can mint tokens in this copy of the contract
     mapping(uint256 => address) internal minters; // map of tokens to minters
+    mapping(uint256 => bool) internal _isServerSigned; // check if server side drop mint
+    address public _proxyAddress;    // webaverse contract address
+
 
     event Claim(address signer, address claimer, uint256 indexed id);
     event ExternalClaim(
@@ -45,7 +46,14 @@ contract WebaverseERC1155 is
         __ERC1155_init(baseURI_);
         _webaBaseURI = baseURI_;
         _webaverse_voucher_init();
-        _CantBeEvil_init(LicenseVersion.CBE_CC0);
+    }
+
+    modifier onlyProxy() {
+        require(
+            msg.sender == _proxyAddress, 
+            "Only webaverse contract is allowed to access this function"
+        );
+        _;
     }
 
     /**
@@ -94,6 +102,14 @@ contract WebaverseERC1155 is
     }
 
     /**
+     * @dev Set proxy contract to access the voucher functions
+     * @param _webaverseContractAddress The address of the webaverse contract
+     */
+    function setProxyAddress(address _webaverseContractAddress) public onlyOwner {
+        _proxyAddress = _webaverseContractAddress;
+    }
+
+    /**
      * @return Returns isPublicallyMintable.
      */
     function getPublicallyMintable() public view returns (bool) {
@@ -104,9 +120,9 @@ contract WebaverseERC1155 is
      * @return Returns the token URI against a particular token id.
      * e.g. https://tokens.webaverse.com/1
      */
-    function uri(uint256 _id) public view override returns (string memory) {
+    function uri(uint256 tokenId) public view override returns (string memory) {
         string memory _baseURI = baseURI();
-        return bytes(_baseURI).length != 0 ? string(abi.encodePacked(_baseURI, _tokenURIs[_id])) : '';
+        return bytes(_baseURI).length != 0 ? string(abi.encodePacked(_baseURI, tokenId.toString())) : '';
     }
 
     /**
@@ -153,7 +169,7 @@ contract WebaverseERC1155 is
         uint256 balance,
         string memory _uri,
         bytes memory data
-    ) public {
+    ) public onlyProxy {
         require(isPublicallyMintable, "ERC1155: Public Mint Closed");
         uint256 tokenId = getNextTokenId();
         _mint(to, tokenId, balance, data);
@@ -161,6 +177,7 @@ contract WebaverseERC1155 is
         _incrementTokenId();
         _tokenBalances[tokenId] = balance;
         minters[tokenId] = to;
+        _isServerSigned[tokenId] = false;
     }
 
     /**
@@ -174,7 +191,7 @@ contract WebaverseERC1155 is
         string[] memory uris,
         uint256[] memory balances,
         bytes memory data
-    ) public {
+    ) public onlyProxy {
         require(
             uris.length == balances.length,
             "WBVRSERC1155: URIs and balances length mismatch"
@@ -185,6 +202,7 @@ contract WebaverseERC1155 is
             ids[i] = tokenId;
             setTokenContentURL(tokenId, uris[i]);
             minters[tokenId] = to;
+            _isServerSigned[tokenId] = false;
         }
         _mintBatch(to, ids, balances, data);
     }
@@ -199,7 +217,7 @@ contract WebaverseERC1155 is
      * @dev Voucher must contain valid signature, nonce, and expiry.
      **/
     function mintServerDropNFT(address signer, address claimer, bytes memory data, NFTVoucher calldata voucher)
-        public
+        public onlyProxy
     {
         require(owner() == signer, "Wrong signature!");
 
@@ -211,6 +229,7 @@ contract WebaverseERC1155 is
         _incrementTokenId();
         _tokenBalances[tokenId] = voucher.balance;
         minters[tokenId] = claimer;
+        _isServerSigned[tokenId] = true;
     }
 
     /**
@@ -222,7 +241,7 @@ contract WebaverseERC1155 is
      * @dev Voucher must contain valid signature, nonce, and expiry.
      **/
     function claim(address signer, address claimer, NFTVoucher calldata voucher)
-        public
+        public onlyProxy
     {
         // make sure signature is valid and get the address of the signer
         // address signer = verifyVoucher(voucher);
@@ -260,7 +279,7 @@ contract WebaverseERC1155 is
         address claimer,
         address contractAddress,
         NFTVoucher calldata voucher
-    ) public returns (uint256) {
+    ) public onlyProxy returns (uint256) {
         IERC1155Upgradeable externalContract = IERC1155Upgradeable(
             contractAddress
         );
@@ -328,13 +347,11 @@ contract WebaverseERC1155 is
         return id;
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(CantBeEvilUpgradeable, ERC1155Upgradeable)
-        returns (bool)
-    {
-        return ERC1155Upgradeable.supportsInterface(interfaceId);
+    /**
+     * @notice check if specified token is server signed.
+     */
+    function isServerSigned(uint256 _id) public view returns (bool) {
+        return _isServerSigned[_id];
     }
+
 }

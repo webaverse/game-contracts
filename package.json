@@ -19,11 +19,15 @@
     "deploy-mainnetsidechain-reset": "truffle migrate --network mainnetsidechain --reset",
     "deploy-testnet": "truffle migrate --network testnet",
     "deploy-testnet-reset": "truffle migrate --network testnet --reset",
+    "deploy-goerli": "truffle migrate --network goerli",
+    "deploy-goerli-reset": "truffle migrate --network goerli --reset",
     "deploy-polygon-testnet": "truffle migrate --network testnetpolygon",
     "deploy-polygon-testnet-reset": "truffle migrate --network testnetpolygon --reset",
     "deploy-polygon": "truffle migrate --network polygon",
     "deploy-polygon-reset": "truffle migrate --network polygon --reset",
-    "deploy-verify": "truffle run verify Webaverse WebaverseERC20 WebaverseERC1155 --network polygon"
+    "deploy-verify": "truffle run verify Webaverse WebaverseERC20 WebaverseERC1155 --network polygon",
+    "deploy-verify-goerli": "truffle run verify Webaverse WebaverseERC20 WebaverseERC1155 --network goerli",
+    "deploy-verify-test": "truffle run verify WebaverseVoucher --network goerli"
   },
   "author": "",
   "license": "ISC",

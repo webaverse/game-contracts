@@ -2,7 +2,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 require('dotenv').config()
 
 module.exports = {
-  contracts_directory: "./ethereum",
+  contracts_directory: "./ethereum/",
   networks: {
     development: {
       host: "127.0.0.1",     // Localhost (default: none)
@@ -45,12 +45,22 @@ module.exports = {
       networkCheckTimeout: 10000,
     },
     polygon: {
-      provider: () => new HDWalletProvider(process.env.polygon, `https://polygon-rpc.com`),
+      provider: () => new HDWalletProvider(process.env.polygon, `https://matic-mainnet.chainstacklabs.com`),
       network_id: 137,
       confirmations: 2,
-      timeoutBlocks: 500,
-      networkCheckTimeout: 10000,
+      timeoutBlocks: 2500,
+      gas: 7000000,
+      gasPrice: 220000000000,
+      networkCheckTimeout: 100000,
       skipDryRun: false
+    },
+    goerli: {
+      provider: () => new HDWalletProvider(process.env.goerli, "https://goerli.infura.io/v3/" + process.env.INFURA_API_KEY),
+      network_id: 5,
+      gas: 6700000,
+      gasPrice: 10000000000,
+      timeoutBlocks: 600,
+      networkCheckTimeout: 10000
     }
   },
 
@@ -73,6 +83,7 @@ module.exports = {
   },
   plugins: ['truffle-plugin-verify'],
   api_keys: {
-    polygonscan: '16X7NBNHE9FF11P6K11HIIBBMF8KPVXW5J'
+    polygonscan: '16X7NBNHE9FF11P6K11HIIBBMF8KPVXW5J',
+    etherscan: 'SKID1ZVK755GXRUJEIPCT4BVNS5JUH12PJ'
   }
 }

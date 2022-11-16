@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.15;
+pragma solidity ^0.8.15;
 pragma abicoder v2; // required to accept structs as function parameters
 
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 
 contract WebaverseVoucher is EIP712Upgradeable {
     string private constant SIGNING_DOMAIN = "Webaverse-voucher";

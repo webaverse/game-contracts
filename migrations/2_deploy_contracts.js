@@ -1,7 +1,7 @@
 const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 
-const ERC20 = artifacts.require("WebaverseERC20");
-const ERC1155 = artifacts.require("WebaverseERC1155");
+const WebaverseERC20 = artifacts.require("WebaverseERC20");
+const WebaverseERC1155 = artifacts.require("WebaverseERC1155");
 const Webaverse = artifacts.require("Webaverse");
 
 const chainId = require("../config/chainIds.js");
@@ -14,7 +14,7 @@ const ERC20MarketCap = "2147483648000000000000000000";
 // NFTs
 const ERC1155TokenContractName = "WebaverseERC1155";
 const ERC1155TokenContractSymbol = "ASSET";
-const tokenBaseUri = "https://ipfs.webaverse.com/";
+const tokenBaseUri = "https://ipfs.webaverse.com/ipfs/";
 // const mintFee = 10; // mintFee !=0 in webaverse sidechain 
 const mintFee = 0; // minFee = 0 in Polygon and Polygon testchain: mumbai.
 
@@ -24,6 +24,7 @@ const NetworkTypes = {
   "mainnetsidechain": "mainnetsidechain",
   "polygon": "polygon",
   "testnet": "testnet",
+  "goerli": "goerli",
   "testnetsidechain": "testnetsidechain",
   "testnetpolygon": "testnetpolygon",
   "development": "development"
@@ -34,6 +35,7 @@ const treasurer = {
   "mainnetsidechain": process.env.mainnetsidechainTreasuryAddress,
   "polygon": process.env.polygonTreasuryAddress,
   "testnet": process.env.testnetTreasuryAddress,
+  "goerli": process.env.goerliTreasuryAddress,
   "testnetsidechain": process.env.testnetsidechainTreasuryAddress,
   "testnetpolygon": process.env.testnetpolygonTreasuryAddress,
   "development": process.env.devTreasuryAddress
@@ -44,6 +46,7 @@ const signer = {
   "mainnetsidechain": process.env.mainnetsidechainSignerAddress,
   "polygon": process.env.polygonSignerAddress,
   "testnet": process.env.testnetSignerAddress,
+  "goerli": process.env.goerliTreasuryAddress,
   "testnetsidechain": process.env.testnetsidechainSignerAddress,
   "testnetpolygon": process.env.testnetpolygonSignerAddress,
   "development": process.env.developmentSignerAddress
@@ -67,16 +70,19 @@ module.exports = async function (deployer) {
 
   console.log("Deploying on the " + networkType + " networkType");
 //////////////////////////// ERC20 ////////////////////////////
-  let erc20 = await deployProxy(ERC20, [ERC20ContractName, ERC20Symbol, ERC20MarketCap], { deployer });
-  const ERC20Address = erc20.address;
-  
-  console.log("ERC20 address is " + ERC20Address);
+  let erc20Contract = await deployProxy(WebaverseERC20, [ERC20ContractName, ERC20Symbol, ERC20MarketCap], { deployer });
+  const ERC20Address = WebaverseERC20.address;
 /////////////////////////// ERC1155 //////////////////////////
-  let erc1155 = await deployProxy(ERC1155, [ERC1155TokenContractName, ERC1155TokenContractSymbol, "tokenBaseUri"], { deployer });
-  const ERC1155Address = erc1155.address;
+  let erc1155Contract = await deployProxy(WebaverseERC1155, [ERC1155TokenContractName, ERC1155TokenContractSymbol, tokenBaseUri], { deployer });
+  const ERC1155Address = WebaverseERC1155.address;
 ////////////////////////////// webaverse /////////////////////////////////
-  let webaverse = await deployProxy(Webaverse, [ERC1155Address, ERC20Address, 0, "0xB565D3A7Bcf568f231726585e0b84f9E2a3722dB"], { deployer })
-const WebaverseAddress = webaverse.address;
+  let webaverseContract = await deployProxy(Webaverse, [ERC1155Address, ERC20Address, mintFee, treasurer[networkType]], { deployer })
+  const WebaverseAddress = Webaverse.address;
+////////////////////////////// Set proxy as a webaverse contract /////////////////////////////////
+  await erc20Contract.setProxyAddress(WebaverseAddress)
+  await erc1155Contract.setProxyAddress(WebaverseAddress)  
+
+
 //////////////////////////////////////////////////////////////////////////
 
   console.log("*******************************")

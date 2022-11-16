@@ -20,6 +20,9 @@ contract WebaverseERC20 is
     // url of tokens
     string private _tokenuri;
 
+    // webaverse contract address
+    address public _proxyAddress;  
+
     // Event occuring when a token is redeemed by a user in the webaverse world for the native smart contract
     event Claim(address signer, address claimer, uint256 balance);
 
@@ -35,6 +38,14 @@ contract WebaverseERC20 is
         require(
             isAllowedMinter(_msgSender()),
             "ERC20: Only white listed minters are allowed to mint"
+        );
+        _;
+    }
+
+    modifier onlyProxy() {
+        require(
+            msg.sender == _proxyAddress, 
+            "Only webaverse contract is allowed to access this function"
         );
         _;
     }
@@ -67,6 +78,14 @@ contract WebaverseERC20 is
     }
 
     /**
+     * @dev Set proxy contract to access the voucher functions
+     * @param _webaverseContractAddress The address of the webaverse contract
+     */
+    function setProxyAddress(address _webaverseContractAddress) public onlyOwner {
+        _proxyAddress = _webaverseContractAddress;
+    }
+
+    /**
      * @dev Mint ERC20 tokens
      * @param to Tokens created for this account
      * @param amount Number of tokens to mint for this call
@@ -85,7 +104,7 @@ contract WebaverseERC20 is
      * @param to Tokens created for this account
      * @param voucher A signed NFTVoucher(FTVoucher) that describes the FT to be redeemed.
      */
-    function mintServerDropFT(address signer, address to, NFTVoucher calldata voucher) public {
+    function mintServerDropFT(address signer, address to, NFTVoucher calldata voucher) public onlyProxy {
         require(
             totalSupply() + voucher.balance <= maxSupply(),
             "ERC20: Max supply reached"
@@ -134,6 +153,7 @@ contract WebaverseERC20 is
     function claim(address signer, address claimer, NFTVoucher calldata voucher)
         public
         virtual
+        onlyProxy
         returns (uint256)
     {
         require(

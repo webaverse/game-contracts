@@ -5,8 +5,12 @@ pragma solidity ^0.8.15;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./WebaverseERC1155.sol";
 import "./WebaverseERC20.sol";
+import {LicenseVersion, CantBeEvilUpgradeable} from "./CantBeEvilUpgradeable.sol";
 
-contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
+contract Webaverse is WebaverseVoucher,
+    OwnableUpgradeable,
+    CantBeEvilUpgradeable
+{
     WebaverseERC1155 private _nftContract;
     WebaverseERC20 private _silkContract;
     uint256 private _mintFee; // ERC20 fee to mint ERC721
@@ -28,6 +32,7 @@ contract Webaverse is WebaverseVoucher, OwnableUpgradeable {
     ) public initializer {
         __Ownable_init();
         _webaverse_voucher_init();
+        _CantBeEvil_init(LicenseVersion.CBE_CC0);
         _nftContract = WebaverseERC1155(_nftAddress);
         _silkContract = WebaverseERC20(_silkAddress);
         _mintFee = mintFee_;
